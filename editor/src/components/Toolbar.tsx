@@ -11,8 +11,10 @@ import {
   Download,
   Play,
   Rocket,
+  Sparkles,
 } from 'lucide-react';
 import { DeploymentModal } from './Deployment/DeploymentModal';
+import { AIAssistant } from './AI/AIAssistant';
 import { ExportService } from '../lib/exportService';
 
 interface ToolbarProps {
@@ -23,6 +25,7 @@ interface ToolbarProps {
 export function Toolbar({ onViewModeChange, currentMode }: ToolbarProps) {
   const { undo, redo, historyIndex, history, components } = useEditorStore();
   const [showDeployment, setShowDeployment] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const canUndo = historyIndex > 0;
@@ -113,6 +116,14 @@ export function Toolbar({ onViewModeChange, currentMode }: ToolbarProps) {
 
       {/* Right - Actions */}
       <div className="flex items-center gap-2">
+        <button
+          onClick={() => setShowAIAssistant(true)}
+          className="px-4 py-2 rounded hover:bg-accent flex items-center gap-2 text-sm"
+          title="AI Assistant"
+        >
+          <Sparkles className="w-4 h-4" />
+          AI
+        </button>
         <button className="px-4 py-2 rounded hover:bg-accent flex items-center gap-2 text-sm">
           <Play className="w-4 h-4" />
           Preview
@@ -140,6 +151,11 @@ export function Toolbar({ onViewModeChange, currentMode }: ToolbarProps) {
           onClose={() => setShowDeployment(false)}
           projectData={{ components }}
         />
+      )}
+
+      {/* AI Assistant Modal */}
+      {showAIAssistant && (
+        <AIAssistant onClose={() => setShowAIAssistant(false)} />
       )}
     </div>
   );
