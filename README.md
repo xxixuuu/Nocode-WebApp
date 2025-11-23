@@ -73,73 +73,104 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed system design.
 
 ### Prerequisites
 
-- Node.js 20+
-- Docker & Docker Compose
-- Ollama (for AI features)
+- Node.js 18+
+- npm 9+
+- Docker Desktop
+- Git
 
-### Installation
-
-1. **Clone the repository**
-
-```bash
-git clone https://github.com/yourusername/zerocode.git
-cd zerocode
-```
-
-2. **Install dependencies**
+### 🎯 自動セットアップ（推奨）
 
 ```bash
+# 1. リポジトリクローン
+git clone <your-repo-url>
+cd Nocode-WebApp
+
+# 2. 実装ブランチに切り替え
+git checkout claude/nocode-web-builder-013kHaGea8tGjMjhaThfmSPf
+
+# 3. 自動セットアップスクリプト実行
+./setup.sh
+
+# 4. 依存関係インストール
 npm install
-```
 
-3. **Set up environment variables**
+# 5. Dockerサービス起動
+docker-compose up -d
 
-```bash
-# Backend
-cp backend/.env.example backend/.env
+# 6. Prismaセットアップ
+cd backend
+npx prisma generate
+npx prisma migrate dev --name init
+cd ..
 
-# Edit backend/.env with your configuration
-```
+# 7. Ollamaモデルダウンロード（AI機能を使う場合）
+docker exec -it zerocode-ollama ollama pull deepseek-coder
 
-4. **Start infrastructure services**
-
-```bash
-docker-compose up -d postgres redis mongodb ollama
-```
-
-5. **Run database migrations**
-
-```bash
-npm run db:migrate
-```
-
-6. **Pull Ollama models (first time)**
-
-```bash
-docker exec -it zerocode-ollama ollama pull deepseek-coder:6.7b
-docker exec -it zerocode-ollama ollama pull codellama:13b
-docker exec -it zerocode-ollama ollama pull starcoder2:15b
-```
-
-7. **Start development servers**
-
-```bash
-# Terminal 1: Start all services with Turbo
+# 8. 開発サーバー起動
 npm run dev
-
-# Or start individually:
-# Terminal 1: Backend
-cd backend && npm run dev
-
-# Terminal 2: Frontend
-cd editor && npm run dev
 ```
 
-8. **Open the application**
+### 📱 アクセス
 
-- Editor: http://localhost:3000
-- API: http://localhost:4000
-- API Docs: http://localhost:4000/docs
+- **Editor (Frontend)**: http://localhost:5173
+- **Backend API**: http://localhost:3001
+- **Prisma Studio**: `cd backend && npx prisma studio` → http://localhost:5555
+
+### 🔧 手動セットアップ
+
+<details>
+<summary>手動でセットアップする場合はこちら</summary>
+
+1. **docker-compose.yml 作成**
+```yaml
+version: '3.8'
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: zerocode-postgres
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zerocode
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: zerocode-redis
+    ports:
+      - '6379:6379'
+
+  mongodb:
+    image: mongo:7
+    container_name: zerocode-mongodb
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: zerocode-ollama
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  ollama_data:
+```
+
+2. **backend/.env 作成**
+
+`backend/.env.example` を参照して `.env` を作成
+
+</details>
 
 ## 📖 Usage
 
@@ -272,25 +303,38 @@ railway up
 
 ## 🗺️ Roadmap
 
-### Phase 1 (Current)
+### ✅ Phase 1 - Core Platform (Completed)
 - [x] Visual editor with drag-and-drop
-- [x] Basic component library
-- [x] Code generation (Next.js)
-- [x] Ollama integration
-- [ ] Data modeling
-- [ ] Workflow builder
+- [x] 33 component library (Layout, Form, Data, Media, Navigation, Feedback)
+- [x] Code generation engine (React/Next.js)
+- [x] Ollama AI integration (generate, review, optimize)
+- [x] Data modeling (ER diagram + Prisma schema generation)
+- [x] Workflow builder (5 node types + TypeScript code generation)
+- [x] Authentication system (JWT + Magic Link)
+- [x] Docker sandbox (secure code execution)
 
-### Phase 2
-- [ ] Real-time collaboration
-- [ ] Advanced components
+### ✅ Phase 2 - Advanced Features (Completed)
+- [x] Real-time collaboration (WebSocket + Socket.IO)
+- [x] Export functionality (ZIP download)
+- [x] Preview mode (Visual + Code)
+- [x] Deployment integration (Vercel + Railway)
+- [x] AI Assistant UI (chat interface)
+
+### 🚧 Phase 3 - Enhancement (In Progress)
+- [ ] OAuth2 integration (Google, GitHub)
 - [ ] Template marketplace
-- [ ] Plugin system
+- [ ] Component plugin system
+- [ ] E2E testing suite
+- [ ] Performance optimization
+- [ ] Documentation site
 
-### Phase 3
+### 📋 Phase 4 - Enterprise (Planned)
 - [ ] Mobile app builder
-- [ ] Custom database support
-- [ ] Advanced deployments (K8s)
+- [ ] Multi-database support
+- [ ] Kubernetes deployments
 - [ ] White-label solution
+- [ ] Team management
+- [ ] Analytics dashboard
 
 ## 🤝 Contributing
 
