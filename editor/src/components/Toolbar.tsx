@@ -13,6 +13,7 @@ import {
   Rocket,
 } from 'lucide-react';
 import { DeploymentModal } from './Deployment/DeploymentModal';
+import { ExportService } from '../lib/exportService';
 
 interface ToolbarProps {
   onViewModeChange: (mode: 'design' | 'data' | 'workflow' | 'preview') => void;
@@ -22,9 +23,22 @@ interface ToolbarProps {
 export function Toolbar({ onViewModeChange, currentMode }: ToolbarProps) {
   const { undo, redo, historyIndex, history, components } = useEditorStore();
   const [showDeployment, setShowDeployment] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await ExportService.exportAsZip(components, 'my-zerocode-app');
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export project. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="h-14 border-b border-border bg-card flex items-center justify-between px-4">
@@ -103,9 +117,13 @@ export function Toolbar({ onViewModeChange, currentMode }: ToolbarProps) {
           <Play className="w-4 h-4" />
           Preview
         </button>
-        <button className="px-4 py-2 rounded hover:bg-accent flex items-center gap-2 text-sm">
+        <button
+          onClick={handleExport}
+          disabled={isExporting || components.length === 0}
+          className="px-4 py-2 rounded hover:bg-accent flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <Download className="w-4 h-4" />
-          Export Code
+          {isExporting ? 'Exporting...' : 'Export Code'}
         </button>
         <button
           onClick={() => setShowDeployment(true)}
