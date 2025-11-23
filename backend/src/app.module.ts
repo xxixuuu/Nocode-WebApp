@@ -7,6 +7,7 @@ import { CodegenModule } from './modules/codegen/codegen.module';
 import { OllamaModule } from './modules/ollama/ollama.module';
 import { DeployModule } from './modules/deploy/deploy.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { SandboxModule } from './modules/sandbox/sandbox.module';
 import { PrismaService } from './common/prisma.service';
 
 @Module({
@@ -40,6 +41,7 @@ import { PrismaService } from './common/prisma.service';
     CodegenModule,
     OllamaModule,
     DeployModule,
+    SandboxModule,
   ],
   providers: [PrismaService],
   exports: [PrismaService],
