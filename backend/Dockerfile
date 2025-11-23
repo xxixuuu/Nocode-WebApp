@@ -1,0 +1,25 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies for Prisma
+RUN apk add --no-cache openssl
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Expose port
+EXPOSE 4000
+
+# Start command (overridden in docker-compose for dev)
+CMD ["npm", "run", "start:prod"]

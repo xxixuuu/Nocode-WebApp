@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: zerocode-postgres
+    environment:
+      POSTGRES_USER: zerocode
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: zerocode
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - zerocode
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zerocode"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: zerocode-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - zerocode
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7
+    container_name: zerocode-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - zerocode
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: zerocode-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - zerocode
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zerocode-backend
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://zerocode:password@postgres:5432/zerocode?schema=public
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_URL=mongodb://mongodb:27017/zerocode-code
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - zerocode
+      - sandbox-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    command: npm run dev
+
+  editor:
+    build:
+      context: ./editor
+      dockerfile: Dockerfile
+    container_name: zerocode-editor
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:4000
+    volumes:
+      - ./editor:/app
+      - /app/node_modules
+    networks:
+      - zerocode
+    depends_on:
+      - backend
+    command: npm run dev
+
+networks:
+  zerocode:
+    driver: bridge
+  sandbox-network:
+    driver: bridge
+    internal: true
+
+volumes:
+  postgres_data:
+  redis_data:
+  mongodb_data:
+  ollama_data:

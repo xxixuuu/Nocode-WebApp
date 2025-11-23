@@ -1,0 +1,177 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  avatarUrl     String?
+  role          Role      @default(USER)
+
+  projects      Project[]
+  sessions      Session[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  components  Component[]
+  schemas     Schema[]
+  workflows   Workflow[]
+  pages       Page[]
+
+  framework   Framework @default(NEXTJS)
+  status      ProjectStatus @default(DRAFT)
+
+  metadata    Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("projects")
+}
+
+model Component {
+  id          String   @id @default(cuid())
+  name        String
+  type        String
+
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  parentId    String?
+  parent      Component? @relation("ComponentChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Component[] @relation("ComponentChildren")
+
+  props       Json
+  styles      Json?
+  events      Json?
+
+  order       Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("components")
+}
+
+model Schema {
+  id          String   @id @default(cuid())
+  name        String
+
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  fields      SchemaField[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("schemas")
+}
+
+model SchemaField {
+  id          String   @id @default(cuid())
+  name        String
+  type        String
+
+  schemaId    String
+  schema      Schema   @relation(fields: [schemaId], references: [id], onDelete: Cascade)
+
+  isRequired  Boolean  @default(false)
+  isUnique    Boolean  @default(false)
+  isId        Boolean  @default(false)
+
+  defaultValue String?
+  validationRules Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("schema_fields")
+}
+
+model Workflow {
+  id          String   @id @default(cuid())
+  name        String
+
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  nodes       Json
+  edges       Json
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("workflows")
+}
+
+model Page {
+  id          String   @id @default(cuid())
+  name        String
+  path        String
+
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  layout      Json?
+  metadata    Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([projectId, path])
+  @@map("pages")
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  token       String   @unique
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt   DateTime
+
+  createdAt   DateTime @default(now())
+
+  @@map("sessions")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Framework {
+  NEXTJS
+  VITE_REACT
+  SVELTE
+}
+
+enum ProjectStatus {
+  DRAFT
+  BUILDING
+  DEPLOYED
+  FAILED
+}
