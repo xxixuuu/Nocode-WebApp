@@ -9,6 +9,7 @@ import { DeployModule } from './modules/deploy/deploy.module';
 import { DeploymentModule } from './modules/deployment/deployment.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SandboxModule } from './modules/sandbox/sandbox.module';
+import { CollaborationModule } from './modules/collaboration/collaboration.module';
 import { PrismaService } from './common/prisma.service';
 
 @Module({
@@ -44,6 +45,7 @@ import { PrismaService } from './common/prisma.service';
     DeployModule,
     DeploymentModule,
     SandboxModule,
+    CollaborationModule,
   ],
   providers: [PrismaService],
   exports: [PrismaService],
