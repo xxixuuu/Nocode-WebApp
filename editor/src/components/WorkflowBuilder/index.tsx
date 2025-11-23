@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -18,6 +18,8 @@ import { APICallNode } from './nodes/APICallNode';
 import { LoopNode } from './nodes/LoopNode';
 import { CustomCodeNode } from './nodes/CustomCodeNode';
 import { WorkflowToolbar } from './WorkflowToolbar';
+import { WorkflowCodePreview } from './WorkflowCodePreview';
+import { useWorkflowStore } from '../../store/workflowStore';
 
 const nodeTypes: NodeTypes = {
   trigger: TriggerNode,
@@ -31,6 +33,15 @@ export function WorkflowBuilder() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [showCodePreview, setShowCodePreview] = useState(false);
+
+  const { setNodes: setStoreNodes, setEdges: setStoreEdges } = useWorkflowStore();
+
+  // Sync nodes and edges to workflowStore
+  useEffect(() => {
+    setStoreNodes(nodes);
+    setStoreEdges(edges);
+  }, [nodes, edges, setStoreNodes, setStoreEdges]);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -103,9 +114,7 @@ export function WorkflowBuilder() {
   }, []);
 
   const generateCode = () => {
-    // TODO: Implement code generation from workflow
-    console.log('Generating code from workflow...', { nodes, edges });
-    alert('Code generation will be implemented soon!');
+    setShowCodePreview(true);
   };
 
   return (
@@ -130,6 +139,11 @@ export function WorkflowBuilder() {
           <Background gap={12} size={1} />
         </ReactFlow>
       </div>
+
+      {/* Code Preview Modal */}
+      {showCodePreview && (
+        <WorkflowCodePreview onClose={() => setShowCodePreview(false)} />
+      )}
     </div>
   );
 }

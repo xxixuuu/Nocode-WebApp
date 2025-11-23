@@ -14,7 +14,9 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { EntityNode } from './EntityNode';
 import { EntityPanel } from './EntityPanel';
+import { CodePreviewModal } from './CodePreviewModal';
 import { Plus } from 'lucide-react';
+import { useDataModelStore } from '../../store/dataModelStore';
 
 const nodeTypes: NodeTypes = {
   entity: EntityNode,
@@ -25,6 +27,10 @@ export function DataModeler() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showEntityPanel, setShowEntityPanel] = useState(false);
+  const [showCodePreview, setShowCodePreview] = useState(false);
+  const [previewType, setPreviewType] = useState<'prisma' | 'api'>('prisma');
+
+  const { setNodes: setStoreNodes, setEdges: setStoreEdges } = useDataModelStore();
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -34,9 +40,11 @@ export function DataModeler() {
         animated: true,
         label: '1:N',
       };
-      setEdges((eds) => addEdge(edge, eds));
+      const newEdges = addEdge(edge, edges);
+      setEdges(newEdges);
+      setStoreEdges(newEdges);
     },
-    [setEdges]
+    [edges, setEdges, setStoreEdges]
   );
 
   const addEntity = () => {
@@ -66,23 +74,31 @@ export function DataModeler() {
       },
     };
 
-    setNodes((nds) => [...nds, newNode]);
+    const newNodes = [...nodes, newNode];
+    setNodes(newNodes);
+    setStoreNodes(newNodes);
   };
 
   const updateEntity = (nodeId: string, data: any) => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === nodeId) {
-          return { ...node, data: { ...node.data, ...data } };
-        }
-        return node;
-      })
-    );
+    const newNodes = nodes.map((node) => {
+      if (node.id === nodeId) {
+        return { ...node, data: { ...node.data, ...data } };
+      }
+      return node;
+    });
+    setNodes(newNodes);
+    setStoreNodes(newNodes);
   };
 
   const deleteEntity = (nodeId: string) => {
-    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
-    setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
+    const newNodes = nodes.filter((node) => node.id !== nodeId);
+    const newEdges = edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId);
+
+    setNodes(newNodes);
+    setEdges(newEdges);
+    setStoreNodes(newNodes);
+    setStoreEdges(newEdges);
+
     if (selectedNode?.id === nodeId) {
       setSelectedNode(null);
       setShowEntityPanel(false);
@@ -94,6 +110,16 @@ export function DataModeler() {
     setShowEntityPanel(true);
   }, []);
 
+  const handleGeneratePrisma = () => {
+    setPreviewType('prisma');
+    setShowCodePreview(true);
+  };
+
+  const handleGenerateAPI = () => {
+    setPreviewType('api');
+    setShowCodePreview(true);
+  };
+
   return (
     <div className="h-full flex">
       {/* React Flow Canvas */}
@@ -101,8 +127,14 @@ export function DataModeler() {
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          onNodesChange={(changes) => {
+            onNodesChange(changes);
+            setStoreNodes(nodes);
+          }}
+          onEdgesChange={(changes) => {
+            onEdgesChange(changes);
+            setStoreEdges(edges);
+          }}
           onConnect={onConnect}
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
@@ -124,10 +156,16 @@ export function DataModeler() {
 
         {/* Schema Actions */}
         <div className="absolute top-4 right-4 flex gap-2 z-10">
-          <button className="px-4 py-2 bg-card border border-border rounded-lg shadow hover:bg-accent">
+          <button
+            onClick={handleGeneratePrisma}
+            className="px-4 py-2 bg-card border border-border rounded-lg shadow hover:bg-accent"
+          >
             Generate Prisma Schema
           </button>
-          <button className="px-4 py-2 bg-card border border-border rounded-lg shadow hover:bg-accent">
+          <button
+            onClick={handleGenerateAPI}
+            className="px-4 py-2 bg-card border border-border rounded-lg shadow hover:bg-accent"
+          >
             Generate API Routes
           </button>
         </div>
@@ -140,6 +178,14 @@ export function DataModeler() {
           onUpdate={(data) => updateEntity(selectedNode.id, data)}
           onDelete={() => deleteEntity(selectedNode.id)}
           onClose={() => setShowEntityPanel(false)}
+        />
+      )}
+
+      {/* Code Preview Modal */}
+      {showCodePreview && (
+        <CodePreviewModal
+          type={previewType}
+          onClose={() => setShowCodePreview(false)}
         />
       )}
     </div>
