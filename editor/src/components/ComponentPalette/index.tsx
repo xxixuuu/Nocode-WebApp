@@ -1,44 +1,17 @@
 import { useDraggable } from '@dnd-kit/core';
-import {
-  LayoutGrid,
-  Type,
-  MousePointer,
-  Square,
-  Image,
-  List,
-  Table,
-  FormInput,
-} from 'lucide-react';
+import { componentDefinitions } from '../../lib/componentDefinitions';
+import * as Icons from 'lucide-react';
 
-interface ComponentDefinition {
-  type: string;
-  label: string;
-  icon: React.ReactNode;
-  category: string;
+interface DraggableComponentProps {
+  component: {
+    type: string;
+    label: string;
+    icon: string;
+    category: string;
+  };
 }
 
-const components: ComponentDefinition[] = [
-  // Layout
-  { type: 'Container', label: 'Container', icon: <LayoutGrid className="w-4 h-4" />, category: 'Layout' },
-  { type: 'Box', label: 'Box', icon: <Square className="w-4 h-4" />, category: 'Layout' },
-
-  // Typography
-  { type: 'Text', label: 'Text', icon: <Type className="w-4 h-4" />, category: 'Typography' },
-  { type: 'Heading', label: 'Heading', icon: <Type className="w-4 h-4" />, category: 'Typography' },
-
-  // Form
-  { type: 'Input', label: 'Input', icon: <FormInput className="w-4 h-4" />, category: 'Form' },
-  { type: 'Button', label: 'Button', icon: <MousePointer className="w-4 h-4" />, category: 'Form' },
-
-  // Data
-  { type: 'List', label: 'List', icon: <List className="w-4 h-4" />, category: 'Data' },
-  { type: 'Table', label: 'Table', icon: <Table className="w-4 h-4" />, category: 'Data' },
-
-  // Media
-  { type: 'Image', label: 'Image', icon: <Image className="w-4 h-4" />, category: 'Media' },
-];
-
-function DraggableComponent({ component }: { component: ComponentDefinition }) {
+function DraggableComponent({ component }: DraggableComponentProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `palette-${component.type}`,
     data: {
@@ -54,6 +27,9 @@ function DraggableComponent({ component }: { component: ComponentDefinition }) {
       }
     : undefined;
 
+  // Get icon component from lucide-react
+  const IconComponent = (Icons as any)[component.icon] || Icons.Square;
+
   return (
     <div
       ref={setNodeRef}
@@ -62,14 +38,14 @@ function DraggableComponent({ component }: { component: ComponentDefinition }) {
       {...attributes}
       className="flex items-center gap-2 p-3 rounded-lg border border-border hover:border-primary hover:bg-accent cursor-move transition-colors"
     >
-      {component.icon}
+      <IconComponent className="w-4 h-4" />
       <span className="text-sm font-medium">{component.label}</span>
     </div>
   );
 }
 
 export function ComponentPalette() {
-  const categories = Array.from(new Set(components.map(c => c.category)));
+  const categories = Array.from(new Set(componentDefinitions.map(c => c.category)));
 
   return (
     <div className="p-4 space-y-6 overflow-y-auto h-full">
@@ -79,7 +55,7 @@ export function ComponentPalette() {
             {category}
           </h3>
           <div className="space-y-2">
-            {components
+            {componentDefinitions
               .filter(c => c.category === category)
               .map(component => (
                 <DraggableComponent key={component.type} component={component} />

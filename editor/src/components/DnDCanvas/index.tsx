@@ -2,6 +2,7 @@ import { DndContext, DragEndEvent, DragOverlay, useSensor, useSensors, PointerSe
 import { useEditorStore } from '../../store/editorStore';
 import { ComponentRenderer } from './ComponentRenderer';
 import { DropZone } from './DropZone';
+import { componentDefinitions } from '../../lib/componentDefinitions';
 
 export function DnDCanvas() {
   const { components, addComponent, moveComponent } = useEditorStore();
@@ -73,50 +74,6 @@ export function DnDCanvas() {
 }
 
 function getDefaultProps(type: string): Record<string, any> {
-  const defaults: Record<string, Record<string, any>> = {
-    Container: {
-      className: 'flex flex-col gap-4 p-4',
-    },
-    Box: {
-      className: 'p-4 border border-gray-200 rounded',
-    },
-    Text: {
-      content: 'Text',
-      className: 'text-base',
-    },
-    Heading: {
-      content: 'Heading',
-      level: 1,
-      className: 'text-2xl font-bold',
-    },
-    Button: {
-      content: 'Button',
-      variant: 'primary',
-      className: 'px-4 py-2 bg-blue-500 text-white rounded',
-    },
-    Input: {
-      type: 'text',
-      placeholder: 'Enter text...',
-      className: 'px-3 py-2 border border-gray-300 rounded',
-    },
-    Image: {
-      src: 'https://via.placeholder.com/300x200',
-      alt: 'Placeholder',
-      className: 'w-full h-auto',
-    },
-    List: {
-      items: ['Item 1', 'Item 2', 'Item 3'],
-      className: 'list-disc list-inside',
-    },
-    Table: {
-      columns: ['Column 1', 'Column 2'],
-      rows: [
-        ['Data 1', 'Data 2'],
-        ['Data 3', 'Data 4'],
-      ],
-      className: 'w-full border-collapse',
-    },
-  };
-
-  return defaults[type] || {};
+  const definition = componentDefinitions.find(c => c.type === type);
+  return definition?.defaultProps || {};
 }
