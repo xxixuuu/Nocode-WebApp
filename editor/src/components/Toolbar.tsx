@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useEditorStore } from '../store/editorStore';
 import {
   Undo2,
@@ -9,7 +10,9 @@ import {
   Workflow,
   Download,
   Play,
+  Rocket,
 } from 'lucide-react';
+import { DeploymentModal } from './Deployment/DeploymentModal';
 
 interface ToolbarProps {
   onViewModeChange: (mode: 'design' | 'data' | 'workflow' | 'preview') => void;
@@ -17,7 +20,8 @@ interface ToolbarProps {
 }
 
 export function Toolbar({ onViewModeChange, currentMode }: ToolbarProps) {
-  const { undo, redo, historyIndex, history } = useEditorStore();
+  const { undo, redo, historyIndex, history, components } = useEditorStore();
+  const [showDeployment, setShowDeployment] = useState(false);
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
@@ -99,11 +103,26 @@ export function Toolbar({ onViewModeChange, currentMode }: ToolbarProps) {
           <Play className="w-4 h-4" />
           Preview
         </button>
-        <button className="px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 text-sm font-medium">
+        <button className="px-4 py-2 rounded hover:bg-accent flex items-center gap-2 text-sm">
           <Download className="w-4 h-4" />
           Export Code
         </button>
+        <button
+          onClick={() => setShowDeployment(true)}
+          className="px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 text-sm font-medium"
+        >
+          <Rocket className="w-4 h-4" />
+          Deploy
+        </button>
       </div>
+
+      {/* Deployment Modal */}
+      {showDeployment && (
+        <DeploymentModal
+          onClose={() => setShowDeployment(false)}
+          projectData={{ components }}
+        />
+      )}
     </div>
   );
 }
